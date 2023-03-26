@@ -20,10 +20,9 @@ npm i -g @nestjs/cli
 ```
 docker-compose up -d
 ```
-5. Instalación de mongoose
+5. Reconstruir la base de datos con la semilla
 ```
-yarn add @nestjs/mongoose mongoose
-npm i @nestjs/mongoose mongoose
+http://localhost:3000/api/v2/seed
 ```
 ## Stack usado
 * MongoDB
