@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model } from 'mongoose';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { UpdatePokemonDto } from './dto/update-pokemon.dto';
 import { Pokemon } from './entities/pokemon.entity';
@@ -8,11 +10,15 @@ import { Pokemon } from './entities/pokemon.entity';
 
 @Injectable()
 export class PokemonService {
+  private defaultLimit:number;
   //Se configura la inyección de depencencias, asociando el modelo y la entidad creada
   constructor(
     @InjectModel(Pokemon.name)
-    private readonly pokemonModel: Model<Pokemon>
-  ) { }
+    private readonly pokemonModel: Model<Pokemon>,
+    private readonly configService :ConfigService
+  ) { 
+    this.defaultLimit=configService.get<number>('default_limit');    
+  }
 
   async create(createPokemonDto: CreatePokemonDto) {
     createPokemonDto.name = createPokemonDto.name.toLowerCase();
@@ -26,8 +32,14 @@ export class PokemonService {
     }
   }
 
-  findAll() {
-    return `This action returns all pokemon`;
+  findAll(paginationDTO: PaginationDto) {
+    const { limit = this.defaultLimit, offset = 0 } = paginationDTO;
+
+    return this.pokemonModel.find()
+      .limit(limit)
+      .skip(offset)
+      .sort({ no: 1 })
+      .select('-__v');//Quitamos ese campo
   }
 
   async findOne(term: string) {
@@ -69,9 +81,9 @@ export class PokemonService {
     // const pokemon = await this.findOne(id);
     // await pokemon.deleteOne();
     // const result = await this.pokemonModel.findByIdAndDelete(id); //Borra uno pero no confirma si se borro
-    const {deletedCount} = await this.pokemonModel.deleteMany({_id:id});//delete from pokemon
+    const { deletedCount } = await this.pokemonModel.deleteMany({ _id: id });//delete from pokemon
     //Devuelve el num de borrados
-    if(deletedCount===0) throw new BadRequestException(`Pokemon with id ${id} not found`);
+    if (deletedCount === 0) throw new BadRequestException(`Pokemon with id ${id} not found`);
 
     return;
   }
